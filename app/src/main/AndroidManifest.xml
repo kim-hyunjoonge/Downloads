@@ -24,7 +24,7 @@
         </activity>
         <service
             android:enabled="true"
-            android:name=".DownloadService" />
+            android:name=".LocalService" />
 
     </application>
 

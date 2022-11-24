@@ -1,46 +1,58 @@
-
 /*MainActivity*/
 package com.example.myapplication;
 
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
+import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
-import android.os.Messenger;
+import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
-    private Handler handler = new Handler() {
-        public void handleMessage(Message message) {
-            Object path = message.obj;
-            if (message.arg1 == RESULT_OK && path != null) {
-                Toast.makeText(getApplicationContext(),
-                                " " + path.toString() + "을 다운로드하였음.", Toast.LENGTH_LONG)
-                        .show();
-            } else {
-                Toast.makeText(getApplicationContext(), "다운로드 실패",
-                        Toast.LENGTH_LONG).show();
-            }
-
-        };
-    };
-
+    LocalService mService;
+    boolean mBound = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
     }
-
-    public void onClick(View view) {
-        Intent intent = new Intent(this, DownloadService.class);
-        Messenger messenger = new Messenger(handler);
-        intent.putExtra("MESSENGER", messenger);
-        intent.setData(Uri.parse("https://www.naver.com/"));
-        intent.putExtra("urlpath", "https://www.naver.com/");
-        startService(intent);
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Intent intent = new Intent(this, LocalService.class);
+        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+    }
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (mBound) {
+            unbindService(mConnection);
+            mBound = false;
+        }
     }
 
+    // 버튼이 클릭되면 호출된다.
+    public void onButtonClick(View v) {
+        if (mBound) {
+            int num = mService.getRandomNumber();
+            Toast.makeText(this, "number: " + num, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private ServiceConnection mConnection = new ServiceConnection() {
+        // @Override
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            LocalService.LocalBinder binder = (LocalService.LocalBinder) service;
+            mService = binder.getService();
+            mBound = true;
+        }
+
+        // @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            mBound = false;
+        }
+    };
 }
